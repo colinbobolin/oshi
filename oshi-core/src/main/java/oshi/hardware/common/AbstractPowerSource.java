@@ -38,6 +38,24 @@ public abstract class AbstractPowerSource implements PowerSource {
 
     protected double timeRemaining;
 
+    protected double chargeRemaining;
+
+    protected double fullChargeCapacity;
+
+    protected double designedCapacity;
+
+    protected double powerNow;
+
+    protected double voltageNow;
+
+    protected double health;
+
+    protected int cycleCount;
+
+    protected String state;
+
+    protected String technology;
+
     /**
      * Super constructor used by platform-specific implementations of PowerSource
      *
@@ -70,6 +88,60 @@ public abstract class AbstractPowerSource implements PowerSource {
     @Override
     public double getTimeRemaining() {
         return this.timeRemaining;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public double getChargeRemaining() {
+        return chargeRemaining;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public double getFullChargeCapacity() {
+        return fullChargeCapacity;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public double getDesignedCapacity() {
+        return designedCapacity;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public double getPowerNow() {
+        return powerNow;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public double getVoltageNow() {
+        return voltageNow;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public double getHealth() {
+        return health;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public int getCycleCount() {
+        return cycleCount;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getState() {
+        return state;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getTechnology() {
+        return technology;
     }
 
     /** {@inheritDoc} */
