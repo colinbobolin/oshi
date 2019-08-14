@@ -133,12 +133,4 @@ public class SolarisPowerSource extends AbstractPowerSource {
         }
         return new SolarisPowerSource(name, (double) energyNow / energyFull, timeRemaining);
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public void updateAttributes() {
-        PowerSource ps = getPowerSource(this.name);
-        this.remainingCapacity = ps.getRemainingCapacity();
-        this.timeRemaining = ps.getTimeRemaining();
-    }
 }
