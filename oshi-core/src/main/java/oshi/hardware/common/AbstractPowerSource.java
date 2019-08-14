@@ -46,12 +46,14 @@ public abstract class AbstractPowerSource implements PowerSource {
     protected String state;
     protected String technology;
 
+    //TODO remove this after implementation of no-arg constructors
     public AbstractPowerSource(String newName, double newRemainingCapacity, double newTimeRemaining) {
         this.name = newName;
         this.remainingCapacity = newRemainingCapacity;
         this.timeRemaining = newTimeRemaining;
     }
 
+    //TODO remove this after implementation of no-arg constructor (this will be redundant)
     public AbstractPowerSource() {}
 
     /** {@inheritDoc} */
