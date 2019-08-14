@@ -53,6 +53,62 @@ public interface PowerSource extends Serializable {
     double getTimeRemaining();
 
     /**
+     *
+     * @return Energy remaining in mWh
+     */
+    double getEnergyRemaining();
+
+    /**
+     *
+     * @return Charge capacity when full in mWh
+     */
+    double getMaximumCapacity();
+
+    /**
+     *
+     * @return Designed charge capacity in mWh
+     */
+    double getEnergyDesign();
+
+    /**
+     *
+     * @return Power output at time of method call in mV
+     */
+    //TODO see if this is power in mV or current in A
+    double getPower();
+
+    /**
+     *
+     * @return Voltage output at time of method call in mV
+     */
+    double getVoltage();
+
+    /**
+     *
+     * @return Health as a fraction of maximumCapacity/energyDesign
+     */
+    double getHealth();
+
+    /**
+     *
+     * @return Cycle count of Power Source
+     */
+    int getCycleCount();
+
+    /**
+     * Power source status: Charging, Discharging, AC, or Unknown
+     *
+     * @return State of Power Source
+     */
+    String getState();
+
+    /**
+     *
+     * @return Technology of Power Source
+     */
+    String getTechnology();
+
+    /**
      * Updates remaining capacity and time remaining.
      */
     void updateAttributes();
