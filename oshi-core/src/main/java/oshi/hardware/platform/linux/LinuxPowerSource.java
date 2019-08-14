@@ -23,8 +23,12 @@
  */
 package oshi.hardware.platform.linux;
 
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -47,113 +51,134 @@ public class LinuxPowerSource extends AbstractPowerSource {
     private static final String PS_PATH = "/sys/class/power_supply/";
 
     /**
-     * <p>
-     * Constructor for LinuxPowerSource.
-     * </p>
-     *
-     * @param newName
-     *            a {@link java.lang.String} object.
-     * @param newRemainingCapacity
-     *            a double.
-     * @param newTimeRemaining
-     *            a double.
-     */
-    public LinuxPowerSource(String newName, double newRemainingCapacity, double newTimeRemaining) {
-        super(newName, newRemainingCapacity, newTimeRemaining);
-        LOG.debug("Initialized LinuxPowerSource");
-    }
-
-    /**
      * Gets Battery Information
      *
      * @return An array of PowerSource objects representing batteries, etc.
      */
-    public static PowerSource[] getPowerSources() {
-        // Get list of power source names
-        File f = new File(PS_PATH);
-        String[] psNames = f.list();
-        // Empty directory will give null rather than empty array, so fix
-        if (psNames == null) {
-            psNames = new String[0];
-        }
-        List<LinuxPowerSource> psList = new ArrayList<>(psNames.length);
-        // For each power source, output various info
-        for (String psName : psNames) {
-            // Skip if name is ADP* or AC* (AC power supply)
-            if (psName.startsWith("ADP") || psName.startsWith("AC")) {
-                continue;
-            }
-            // Skip if can't read uevent file
-            List<String> psInfo;
-            psInfo = FileUtil.readFile(PS_PATH + psName + "/uevent", false);
-            if (psInfo.isEmpty()) {
-                continue;
-            }
-            // Initialize defaults
-            boolean isPresent = false;
-            boolean isCharging = false;
-            String name = "Unknown";
-            int energyNow = 0;
-            int energyFull = 1;
-            int powerNow = 1;
-            for (String checkLine : psInfo) {
-                if (checkLine.startsWith("POWER_SUPPLY_PRESENT")) {
-                    // Skip if not present
-                    String[] psSplit = checkLine.split("=");
-                    if (psSplit.length > 1) {
-                        isPresent = ParseUtil.parseIntOrDefault(psSplit[1], 0) > 0;
-                    }
-                    if (!isPresent) {
-                        break;
-                    }
-                } else if (checkLine.startsWith("POWER_SUPPLY_NAME")) {
-                    // Name
-                    String[] psSplit = checkLine.split("=");
-                    if (psSplit.length > 1) {
-                        name = psSplit[1];
-                    }
-                } else if (checkLine.startsWith("POWER_SUPPLY_ENERGY_NOW")
-                        || checkLine.startsWith("POWER_SUPPLY_CHARGE_NOW")) {
-                    // Remaining Capacity = energyNow / energyFull
-                    String[] psSplit = checkLine.split("=");
-                    if (psSplit.length > 1) {
-                        energyNow = ParseUtil.parseIntOrDefault(psSplit[1], 0);
-                    }
-                } else if (checkLine.startsWith("POWER_SUPPLY_ENERGY_FULL")
-                        || checkLine.startsWith("POWER_SUPPLY_CHARGE_FULL")) {
-                    String[] psSplit = checkLine.split("=");
-                    if (psSplit.length > 1) {
-                        energyFull = ParseUtil.parseIntOrDefault(psSplit[1], 1);
-                        if (energyFull < 1) {
-                            energyFull = 1;
-                        }
-                    }
-                } else if (checkLine.startsWith("POWER_SUPPLY_STATUS")) {
-                    // Check if charging
-                    String[] psSplit = checkLine.split("=");
-                    if (psSplit.length > 1 && "Charging".equals(psSplit[1])) {
-                        isCharging = true;
-                    }
-                } else if (checkLine.startsWith("POWER_SUPPLY_POWER_NOW")
-                        || checkLine.startsWith("POWER_SUPPLY_CURRENT_NOW")) {
-                    // Time Remaining = energyNow / powerNow (hours)
-                    String[] psSplit = checkLine.split("=");
-                    if (psSplit.length > 1) {
-                        powerNow = ParseUtil.parseIntOrDefault(psSplit[1], 1);
-                    }
-                    if (powerNow < 1) {
-                        isCharging = true;
-                    }
+    public static PowerSource[] getPowerSources() throws IOException {
+        ArrayList<LinuxPowerSource> powerSourcesArrayList = new ArrayList<>();
+        powerSourcesArrayList.add(getSystemBattery());
+        return powerSourcesArrayList.toArray(new LinuxPowerSource[0]);
+    }
+
+    private static LinuxPowerSource getSystemBattery() {
+        try {
+            FileReader f = new FileReader(PS_PATH + "BAT0/uevent");
+            HashMap<String, String> psInfoHashMap = new HashMap<>();
+            try (BufferedReader br = new BufferedReader(f)) {
+                for (String line; (line = br.readLine()) != null; ) {
+                    String[] psSplit = line.split("=");
+                    psInfoHashMap.put(psSplit[0], psSplit[1]);
                 }
             }
-            if (isPresent) {
-                psList.add(new LinuxPowerSource(name, (double) energyNow / energyFull,
-                        isCharging ? -2d : 3600d * energyNow / powerNow));
-            }
+            return parseLinuxBatteryInfoMapIntoPowerSourceObject(psInfoHashMap);
         }
-
-        return psList.toArray(new LinuxPowerSource[0]);
+        catch (IOException e) {
+            LOG.error("IOException occurred", e); //TODO write better error logs
+            return new LinuxPowerSource();
+        }
     }
+
+    //TODO change this logic so it writes from the individual files rather than the uevent file
+    private static LinuxPowerSource parseLinuxBatteryInfoMapIntoPowerSourceObject(HashMap<String, String> map) {
+        LinuxPowerSource powerSource = new LinuxPowerSource();
+        powerSource.setName(map.get("POWER_SUPPLY_NAME"));
+        powerSource.setRemainingCapacity(map.get("POWER_SUPPLY_CAPACITY"));
+        powerSource.setMaximumCapacity(map.get("POWER_SUPPLY_ENERGY_FULL"));
+        powerSource.setEnergyRemaining(map.get("POWER_SUPPLY_ENERGY_NOW"));
+        powerSource.setEnergyDesign(map.get("POWER_SUPPLY_ENERGY_FULL_DESIGN"));
+        powerSource.setCycleCount(map.get("POWER_SUPPLY_CYCLE_COUNT"));
+        powerSource.setState(map.get("POWER_SUPPLY_STATUS"));
+        powerSource.setTechnology(map.get("POWER_SUPPLY_TECHNOLOGY"));
+        powerSource.setVoltage(map.get("POWER_SUPPLY_VOLTAGE_NOW"));
+        powerSource.setTimeRemaining(powerSource.getState() == "Charging" ? -2d :
+                3600d * powerSource.getEnergyRemaining() / powerSource.getVoltage());
+
+        return powerSource;
+    }
+
+//        String[] psNames = f.list();
+//        // Empty directory will give null rather than empty array, so fix
+//        if (psNames == null) {
+//            psNames = new String[0];
+//        }
+//        ArrayList<LinuxPowerSource> psList = new ArrayList<>(psNames.length);
+//        // For each power source, output various info
+//        for (String psName : psNames) {
+//            // Skip if name is ADP* or AC* (AC power supply)
+//            if (psName.startsWith("ADP") || psName.startsWith("AC")) {
+//                continue;
+//            }
+//            // Skip if can't read uevent file
+//            List<String> psInfo;
+//            psInfo = FileUtil.readFile(PS_PATH + psName + "/uevent", false);
+//            if (psInfo.isEmpty()) {
+//                continue;
+//            }
+//            // Initialize defaults
+//            boolean isPresent = false;
+//            boolean isCharging = false;
+//            String name = "Unknown";
+//            int energyNow = 0;
+//            int energyFull = 1;
+//            int powerNow = 1;
+//            for (String checkLine : psInfo) {
+//                if (checkLine.startsWith("POWER_SUPPLY_PRESENT")) {
+//                    // Skip if not present
+//                    String[] psSplit = checkLine.split("=");
+//                    if (psSplit.length > 1) {
+//                        isPresent = ParseUtil.parseIntOrDefault(psSplit[1], 0) > 0;
+//                    }
+//                    if (!isPresent) {
+//                        break;
+//                    }
+//                } else if (checkLine.startsWith("POWER_SUPPLY_NAME")) {
+//                    // Name
+//                    String[] psSplit = checkLine.split("=");
+//                    if (psSplit.length > 1) {
+//                        name = psSplit[1];
+//                    }
+//                } else if (checkLine.startsWith("POWER_SUPPLY_ENERGY_NOW")
+//                        || checkLine.startsWith("POWER_SUPPLY_CHARGE_NOW")) {
+//                    // Remaining Capacity = energyNow / energyFull
+//                    String[] psSplit = checkLine.split("=");
+//                    if (psSplit.length > 1) {
+//                        energyNow = ParseUtil.parseIntOrDefault(psSplit[1], 0);
+//                    }
+//                } else if (checkLine.startsWith("POWER_SUPPLY_ENERGY_FULL")
+//                        || checkLine.startsWith("POWER_SUPPLY_CHARGE_FULL")) {
+//                    String[] psSplit = checkLine.split("=");
+//                    if (psSplit.length > 1) {
+//                        energyFull = ParseUtil.parseIntOrDefault(psSplit[1], 1);
+//                        if (energyFull < 1) {
+//                            energyFull = 1;
+//                        }
+//                    }
+//                } else if (checkLine.startsWith("POWER_SUPPLY_STATUS")) {
+//                    // Check if charging
+//                    String[] psSplit = checkLine.split("=");
+//                    if (psSplit.length > 1 && "Charging".equals(psSplit[1])) {
+//                        isCharging = true;
+//                    }
+//                } else if (checkLine.startsWith("POWER_SUPPLY_POWER_NOW")
+//                        || checkLine.startsWith("POWER_SUPPLY_CURRENT_NOW")) {
+//                    // Time Remaining = energyNow / powerNow (hours)
+//                    String[] psSplit = checkLine.split("=");
+//                    if (psSplit.length > 1) {
+//                        powerNow = ParseUtil.parseIntOrDefault(psSplit[1], 1);
+//                    }
+//                    if (powerNow < 1) {
+//                        isCharging = true;
+//                    }
+//                }
+//            }
+//            if (isPresent) {
+//                psList.add(new LinuxPowerSource(name, (double) energyNow / energyFull,
+//                        isCharging ? -2d : 3600d * energyNow / powerNow));
+//            }
+//        }
+//        return psList;
+//    }
 
     /** {@inheritDoc} */
     @Override
