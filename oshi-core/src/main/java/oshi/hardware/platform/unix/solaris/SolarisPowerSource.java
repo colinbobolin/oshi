@@ -44,7 +44,7 @@ public class SolarisPowerSource extends AbstractPowerSource {
     /*
      * One-time lookup to see which kstat module to use
      */
-    private static final String[] KSTAT_BATT_MOD = { null, "battery", "acpi_drv" };
+    private static final String[] KSTAT_BATT_MOD = {null, "battery", "acpi_drv"};
 
     private static final int KSTAT_BATT_IDX;
 
@@ -63,12 +63,9 @@ public class SolarisPowerSource extends AbstractPowerSource {
      * Constructor for SolarisPowerSource.
      * </p>
      *
-     * @param newName
-     *            a {@link java.lang.String} object.
-     * @param newRemainingCapacity
-     *            a double.
-     * @param newTimeRemaining
-     *            a double.
+     * @param newName              a {@link java.lang.String} object.
+     * @param newRemainingCapacity a double.
+     * @param newTimeRemaining     a double.
      */
     public SolarisPowerSource(String newName, double newRemainingCapacity, double newTimeRemaining) {
         super(newName, newRemainingCapacity, newTimeRemaining);
@@ -135,13 +132,5 @@ public class SolarisPowerSource extends AbstractPowerSource {
             timeRemaining = powerNow > 0 ? 3600d * energyNow / powerNow : -1d;
         }
         return new SolarisPowerSource(name, (double) energyNow / energyFull, timeRemaining);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void updateAttributes() {
-        PowerSource ps = getPowerSource(this.name);
-        this.remainingCapacity = ps.getRemainingCapacity();
-        this.timeRemaining = ps.getTimeRemaining();
     }
 }

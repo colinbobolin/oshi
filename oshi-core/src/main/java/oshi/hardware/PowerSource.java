@@ -54,40 +54,39 @@ public interface PowerSource extends Serializable {
 
     /**
      *
-     * @return Charge remaining in mWh
+     * @return Energy remaining in mWh
      */
-    double getChargeRemaining();
+    double getEnergyRemaining();
 
     /**
      *
      * @return Charge capacity when full in mWh
      */
-    double getFullChargeCapacity();
+    double getMaximumCapacity();
 
     /**
      *
      * @return Designed charge capacity in mWh
      */
-    double getDesignedCapacity();
+    double getEnergyDesign();
 
     /**
      *
      * @return Power output at time of method call in mV
      */
     //TODO see if this is power in mV or current in A
-    double getPowerNow();
+    double getPower();
 
     /**
      *
      * @return Voltage output at time of method call in mV
      */
-    double getVoltageNow();
+    double getVoltage();
 
     /**
      *
-     * @return Fraction of max to designed capacity between 0 and 1
+     * @return Health as a fraction of maximumCapacity/energyDesign
      */
-    //TODO see how to document range [0.0, 1.0]
     double getHealth();
 
     /**
@@ -108,9 +107,4 @@ public interface PowerSource extends Serializable {
      * @return Technology of Power Source
      */
     String getTechnology();
-
-    /**
-     * Updates remaining capacity and time remaining.
-     */
-    void updateAttributes();
 }

@@ -45,23 +45,6 @@ public class WindowsPowerSource extends AbstractPowerSource {
     private static final Logger LOG = LoggerFactory.getLogger(WindowsPowerSource.class);
 
     /**
-     * <p>
-     * Constructor for WindowsPowerSource.
-     * </p>
-     *
-     * @param newName
-     *            a {@link java.lang.String} object.
-     * @param newRemainingCapacity
-     *            a double.
-     * @param newTimeRemaining
-     *            a double.
-     */
-    public WindowsPowerSource(String newName, double newRemainingCapacity, double newTimeRemaining) {
-        super(newName, newRemainingCapacity, newTimeRemaining);
-        LOG.debug("Initialized WindowsPowerSource");
-    }
-
-    /**
      * Gets Battery Information.
      *
      * @return An array of PowerSource objects representing batteries, etc.
@@ -69,12 +52,12 @@ public class WindowsPowerSource extends AbstractPowerSource {
     public static PowerSource[] getPowerSources() {
         // Windows provides a single unnamed battery
         WindowsPowerSource[] psArray = new WindowsPowerSource[1];
-        psArray[0] = getPowerSource("System Battery");
+        psArray[0] = parseSystemPowerSourceInfo();
         return psArray;
     }
 
-    private static WindowsPowerSource getPowerSource(String name) {
-        // Get structure
+    private static WindowsPowerSource parseSystemPowerSourceInfo() {
+        WindowsPowerSource powerSource = new WindowsPowerSource();
         int size = new SystemBatteryState().size();
         Memory mem = new Memory(size);
         if (0 == PowrProf.INSTANCE.CallNtPowerInformation(POWER_INFORMATION_LEVEL.SystemBatteryState, null, 0, mem,
@@ -87,17 +70,11 @@ public class WindowsPowerSource extends AbstractPowerSource {
                 }
                 long maxCapacity = FormatUtil.getUnsignedInt(batteryState.maxCapacity);
                 long remainingCapacity = FormatUtil.getUnsignedInt(batteryState.remainingCapacity);
-                return new WindowsPowerSource(name, (double) remainingCapacity / maxCapacity, estimatedTime);
+                powerSource.setName("System Battery");
+                powerSource.setRemainingCapacity((double) remainingCapacity / maxCapacity);
+                powerSource.setTimeRemaining(estimatedTime);
             }
         }
-        return new WindowsPowerSource("Unknown", 0d, -1d);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void updateAttributes() {
-        PowerSource ps = getPowerSource(this.name);
-        this.remainingCapacity = ps.getRemainingCapacity();
-        this.timeRemaining = ps.getTimeRemaining();
+        return powerSource;
     }
 }
