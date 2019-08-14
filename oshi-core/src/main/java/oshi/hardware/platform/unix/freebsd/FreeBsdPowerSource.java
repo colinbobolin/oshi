@@ -80,4 +80,12 @@ public class FreeBsdPowerSource extends AbstractPowerSource {
         }
         return new FreeBsdPowerSource(name, life / 100d, timeRemaining);
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public void updateAttributes() {
+        PowerSource ps = getPowerSource(this.name);
+        this.remainingCapacity = ps.getRemainingCapacity();
+        this.timeRemaining = ps.getTimeRemaining();
+    }
 }
