@@ -79,7 +79,7 @@ public class LinuxPowerSource extends AbstractPowerSource {
         }
         catch (IOException e) {
             LOG.error("IOException", e);
-            contents = "";
+            contents = null;
         }
         return contents;
     }

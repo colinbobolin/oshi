@@ -90,7 +90,6 @@ public interface PowerSource extends Serializable {
      *
      * @return Power output at time of method call in mV
      */
-    //TODO see if this is power in mV or current in A
     long getPower();
 
     /**
