@@ -114,7 +114,7 @@ public class LinuxPowerSource extends AbstractPowerSource {
 
     private static LinuxPowerSource getLinuxPowerSourceFromAttributeMap(HashMap<String, String> map) {
         LinuxPowerSource powerSource = new LinuxPowerSource();
-        powerSource.setName(map.get("name"));
+        powerSource.setName(map.get("model_name"));
         powerSource.setEnergyRemaining(Long.parseLong(map.get("energy_now")));
         powerSource.setEnergyFull(Long.parseLong(map.get("energy_full")));
         powerSource.setEnergyDesign(Long.parseLong(map.get("energy_full_design")));
@@ -134,13 +134,13 @@ public class LinuxPowerSource extends AbstractPowerSource {
     @Override
     public double getHealth() {
         //TODO cases where values are default
-        return getEnergyFull() / getEnergyDesign();
+        return (double) getEnergyFull() / getEnergyDesign();
     }
 
     @Override
     public double getPercentRemaining() {
         //TODO cases where values are default
-        return getEnergyRemaining() / getEnergyFull();
+        return (double) getEnergyRemaining() / getEnergyFull();
     }
 
     /** {@inheritDoc} */
