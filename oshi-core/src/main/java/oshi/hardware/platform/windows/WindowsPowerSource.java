@@ -35,6 +35,8 @@ import oshi.jna.platform.windows.PowrProf;
 import oshi.jna.platform.windows.PowrProf.SystemBatteryState;
 import oshi.util.FormatUtil;
 
+import java.util.HashMap;
+
 /**
  * A Power Source
  */
@@ -52,35 +54,53 @@ public class WindowsPowerSource extends AbstractPowerSource {
     public static PowerSource[] getPowerSources() {
         // Windows provides a single unnamed battery
         WindowsPowerSource[] psArray = new WindowsPowerSource[1];
-        psArray[0] = parseSystemPowerSourceInfo();
+        psArray[0] = getWindowsBattery();
         return psArray;
     }
 
-    private static WindowsPowerSource parseSystemPowerSourceInfo() {
+    private static WindowsPowerSource getWindowsBattery() {
+        HashMap<String, String> attributeMap = getWindowsBatteryAttributes();
+        return getWindowsPowerSourceFromAttributeMap(attributeMap);
+    }
+
+    private static HashMap<String, String> getWindowsBatteryAttributes() {
+        HashMap<String, String> map = new HashMap<>();
+        SystemBatteryState batteryState = getSystemBatteryState();
+        if (batteryState != null) {
+            int estimatedTime = -2; // -1 = unknown, -2 = unlimited
+            if (batteryState.acOnLine == 0 && batteryState.charging == 0 && batteryState.discharging > 0) {
+                estimatedTime = batteryState.estimatedTime;
+            }
+            long maxCapacity = FormatUtil.getUnsignedInt(batteryState.maxCapacity);
+            long remainingCapacity = FormatUtil.getUnsignedInt(batteryState.remainingCapacity);
+        }
+        return map;
+    }
+
+    private static WindowsPowerSource getWindowsPowerSourceFromAttributeMap(HashMap<String, String> map) {
         WindowsPowerSource powerSource = new WindowsPowerSource();
+        powerSource.setName(map.get(""));
+        powerSource.setEnergyRemaining(Long.parseLong(map.get("")));
+        powerSource.setEnergyFull(Long.parseLong(map.get("")));
+        powerSource.setEnergyDesign(Long.parseLong(map.get("")));
+        powerSource.setPower(Long.parseLong(map.get("")));
+        powerSource.setVoltage(Long.parseLong(map.get("")));
+        powerSource.setCycleCount(Integer.parseInt(map.get("")));
+        powerSource.setState(map.get(""));
+        powerSource.setTechnology(map.get(""));
+        return powerSource;
+    }
+
+    private static SystemBatteryState getSystemBatteryState() {
         int size = new SystemBatteryState().size();
         Memory mem = new Memory(size);
-        if (0 == PowrProf.INSTANCE.CallNtPowerInformation(POWER_INFORMATION_LEVEL.SystemBatteryState, null, 0, mem,
-                size)) {
-            SystemBatteryState batteryState = new SystemBatteryState(mem);
-            if (batteryState.batteryPresent > 0) {
-                int estimatedTime = -2; // -1 = unknown, -2 = unlimited
-                if (batteryState.acOnLine == 0 && batteryState.charging == 0 && batteryState.discharging > 0) {
-                    estimatedTime = batteryState.estimatedTime;
-                }
-                long maxCapacity = FormatUtil.getUnsignedInt(batteryState.maxCapacity);
-                long remainingCapacity = FormatUtil.getUnsignedInt(batteryState.remainingCapacity);
-                powerSource.setName("System Battery");
-                powerSource.setRemainingCapacity((double) remainingCapacity / maxCapacity);
-                powerSource.setTimeRemaining(estimatedTime);
-            }
-        }
-        return powerSource;
+        return (0 == PowrProf.INSTANCE.CallNtPowerInformation(POWER_INFORMATION_LEVEL.SystemBatteryState, null, 0, mem,
+                size)) ? new SystemBatteryState(mem) : null;
     }
 
     /** {@inheritDoc} */
     @Override
     public void updateAttributes() {
-        PowerSource ps = parseSystemPowerSourceInfo();
+        PowerSource ps = getWindowsBattery();
     }
 }
