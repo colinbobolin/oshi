@@ -126,23 +126,6 @@ public class LinuxPowerSource extends AbstractPowerSource {
         return powerSource;
     }
 
-    @Override
-    public double getTimeRemaining() {
-        return getState().equals("Charging") ? -2d : 3600d * getEnergyRemaining() / getVoltage();
-    }
-
-    @Override
-    public double getHealth() {
-        //TODO cases where values are default
-        return (double) getEnergyFull() / getEnergyDesign();
-    }
-
-    @Override
-    public double getPercentRemaining() {
-        //TODO cases where values are default
-        return (double) getEnergyRemaining() / getEnergyFull();
-    }
-
     /** {@inheritDoc} */
     @Override
     public void updateAttributes() {
