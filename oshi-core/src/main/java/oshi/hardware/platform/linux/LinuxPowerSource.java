@@ -114,10 +114,8 @@ public class LinuxPowerSource extends AbstractPowerSource {
     public void updateAttributes() {
         PowerSource[] psArr = getPowerSources();
         for (PowerSource ps : psArr) {
-            if (ps.getName().equals(this.name)) {
-                this.remainingCapacity = ps.getRemainingCapacity();
-                this.timeRemaining = ps.getTimeRemaining();
-                return;
+            if (ps.equals(this)) {
+                getLinuxBatteryAttributes();
             }
         }
         // Didn't find this battery

@@ -80,13 +80,14 @@ public abstract class AbstractPowerSource implements PowerSource {
         else if (getVoltage() == 0) value = 0d;
         else value = 3600d * getEnergyRemaining() / getVoltage();
         return value;
+        //TODO Let's talk about -1 = "Calculating." This doesn't seem accurate to me.
     }
 
     /** {@inheritDoc} */
     @Override
     public long getEnergyRemaining() {
         if (this.energyRemaining == 0) {
-            this.energyRemaining = 0; //TODO
+            this.energyRemaining = 0;
         }
         return energyRemaining;
     }
@@ -95,7 +96,7 @@ public abstract class AbstractPowerSource implements PowerSource {
     @Override
     public long getEnergyFull() {
         if (this.energyFull == 0) {
-            this.energyFull = 0; //TODO
+            this.energyFull = 0;
         }
         return energyFull;
     }
@@ -104,7 +105,7 @@ public abstract class AbstractPowerSource implements PowerSource {
     @Override
     public long getEnergyDesign() {
         if (this.energyDesign == 0) {
-            this.energyDesign = 0; //TODO
+            this.energyDesign = 0;
         }
         return energyDesign;
     }
@@ -125,7 +126,7 @@ public abstract class AbstractPowerSource implements PowerSource {
     @Override
     public long getPower() {
         if (this.power == 0) {
-            this.power = 0; //TODO
+            this.power = 0;
         }
         return power;
     }
@@ -134,7 +135,7 @@ public abstract class AbstractPowerSource implements PowerSource {
     @Override
     public long getVoltage() {
         if (this.voltage == 0) {
-            this.voltage = 0; //TODO
+            this.voltage = 0;
         }
         return voltage;
     }
@@ -143,7 +144,7 @@ public abstract class AbstractPowerSource implements PowerSource {
     @Override
     public int getCycleCount() {
         if (this.cycleCount == 0) {
-            this.cycleCount = 0; //TODO
+            this.cycleCount = 0;
         }
         return cycleCount;
     }
