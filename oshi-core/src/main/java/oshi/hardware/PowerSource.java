@@ -41,7 +41,9 @@ public interface PowerSource extends Serializable {
      * Remaining capacity as a fraction of max capacity.
      *
      * @return A value between 0.0 (fully drained) and 1.0 (fully charged)
+     * @deprecated use {@link #getPercentRemaining()} instead.
      */
+    @Deprecated
     double getRemainingCapacity();
 
     /**
@@ -56,38 +58,46 @@ public interface PowerSource extends Serializable {
      *
      * @return Energy remaining in mWh
      */
-    double getEnergyRemaining();
+    long getEnergyRemaining();
 
     /**
      *
      * @return Charge capacity when full in mWh
      */
-    double getMaximumCapacity();
+    long getEnergyFull();
 
     /**
      *
-     * @return Designed charge capacity in mWh
+     * @return Designed charge capacity when full in mWh
      */
-    double getEnergyDesign();
+    long getEnergyDesign();
+
+    /**
+     * Remaining capacity as a fraction of max capacity. Derived from energyRemaining/energyFull
+     *
+     * @return A value between 0.0 (fully drained) and 1.0 (fully charged)
+     */
+    double getPercentRemaining();
+
+    /**
+     * Health as a fraction of designed capacity. Derived from energyRemaining/energyFull
+     *
+     * @return A value between 0.0 (battery has 0% of design capacity) and 1.0 (battery capacity matches designed)
+     */
+    double getHealth();
 
     /**
      *
      * @return Power output at time of method call in mV
      */
     //TODO see if this is power in mV or current in A
-    double getPower();
+    long getPower();
 
     /**
      *
      * @return Voltage output at time of method call in mV
      */
-    double getVoltage();
-
-    /**
-     *
-     * @return Health as a fraction of maximumCapacity/energyDesign
-     */
-    double getHealth();
+    long getVoltage();
 
     /**
      *

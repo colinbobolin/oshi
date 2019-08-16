@@ -36,20 +36,21 @@ public abstract class AbstractPowerSource implements PowerSource {
     protected String name;
     protected double remainingCapacity;
     protected double timeRemaining;
-    protected double energyRemaining;
-    protected double maximumCapacity;
-    protected double energyDesign;
-    protected double power;
-    protected double voltage;
+    protected long energyRemaining;
+    protected long energyFull;
+    protected long energyDesign;
+    protected double percentRemaining;
     protected double health;
+    protected long power;
+    protected long voltage;
     protected int cycleCount;
     protected String state;
     protected String technology;
 
     //TODO remove this after implementation of no-arg constructors
-    public AbstractPowerSource(String newName, double newRemainingCapacity, double newTimeRemaining) {
+    public AbstractPowerSource(String newName, double percentRemaining, double newTimeRemaining) {
         this.name = newName;
-        this.remainingCapacity = newRemainingCapacity;
+        this.percentRemaining = percentRemaining;
         this.timeRemaining = newTimeRemaining;
     }
 
@@ -68,10 +69,7 @@ public abstract class AbstractPowerSource implements PowerSource {
     /** {@inheritDoc} */
     @Override
     public double getRemainingCapacity() {
-        if (this.remainingCapacity == 0) {
-            this.remainingCapacity = 0d;
-        }
-        return this.remainingCapacity;
+        return getPercentRemaining();
     }
 
     /** {@inheritDoc} */
@@ -85,7 +83,7 @@ public abstract class AbstractPowerSource implements PowerSource {
 
     /** {@inheritDoc} */
     @Override
-    public double getEnergyRemaining() {
+    public long getEnergyRemaining() {
         if (this.energyRemaining == 0) {
             this.energyRemaining = 0; //TODO
         }
@@ -94,16 +92,16 @@ public abstract class AbstractPowerSource implements PowerSource {
 
     /** {@inheritDoc} */
     @Override
-    public double getMaximumCapacity() {
-        if (this.maximumCapacity == 0) {
-            this.maximumCapacity = 0; //TODO
+    public long getEnergyFull() {
+        if (this.energyFull == 0) {
+            this.energyFull = 0; //TODO
         }
-        return maximumCapacity;
+        return energyFull;
     }
 
     /** {@inheritDoc} */
     @Override
-    public double getEnergyDesign() {
+    public long getEnergyDesign() {
         if (this.energyDesign == 0) {
             this.energyDesign = 0; //TODO
         }
@@ -112,7 +110,25 @@ public abstract class AbstractPowerSource implements PowerSource {
 
     /** {@inheritDoc} */
     @Override
-    public double getPower() {
+    public double getPercentRemaining() {
+        if (this.percentRemaining == 0) {
+            this.percentRemaining = 0d;
+        }
+        return percentRemaining;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public double getHealth() {
+        if (this.health == 0) {
+            this.health = 0; //TODO
+        }
+        return health;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long getPower() {
         if (this.power == 0) {
             this.power = 0; //TODO
         }
@@ -121,7 +137,7 @@ public abstract class AbstractPowerSource implements PowerSource {
 
     /** {@inheritDoc} */
     @Override
-    public double getVoltage() {
+    public long getVoltage() {
         if (this.voltage == 0) {
             this.voltage = 0; //TODO
         }
@@ -135,15 +151,6 @@ public abstract class AbstractPowerSource implements PowerSource {
             this.cycleCount = 0; //TODO
         }
         return cycleCount;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public double getHealth() {
-        if (this.health == 0) {
-            this.health = 0; //TODO
-        }
-        return health;
     }
 
     /** {@inheritDoc} */
@@ -176,28 +183,32 @@ public abstract class AbstractPowerSource implements PowerSource {
         this.timeRemaining = timeRemaining;
     }
 
-    public void setEnergyRemaining(double energyRemaining) {
+    public void setEnergyRemaining(long energyRemaining) {
         this.energyRemaining = energyRemaining;
     }
 
-    public void setMaximumCapacity(double maximumCapacity) {
-        this.maximumCapacity = maximumCapacity;
+    public void setEnergyFull(long energyFull) {
+        this.energyFull = energyFull;
     }
 
-    public void setEnergyDesign(double energyDesign) {
+    public void setEnergyDesign(long energyDesign) {
         this.energyDesign = energyDesign;
     }
 
-    public void setPower(double power) {
-        this.power = power;
-    }
-
-    public void setVoltage(double voltage) {
-        this.voltage = voltage;
+    public void setPercentRemaining(double percentRemaining) {
+        this.percentRemaining = percentRemaining;
     }
 
     public void setHealth(double health) {
         this.health = health;
+    }
+
+    public void setPower(long power) {
+        this.power = power;
+    }
+
+    public void setVoltage(long voltage) {
+        this.voltage = voltage;
     }
 
     public void setCycleCount(int cycleCount) {
@@ -216,10 +227,18 @@ public abstract class AbstractPowerSource implements PowerSource {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Name: ").append(getName()).append(", ");
-        //maybe keep the layers of abstraction the same by putting the string formatting in another method?
-        sb.append("Remaining Capacity: ").append(String.format("%.2f", getRemainingCapacity() * 100d)).append("%, ");
-        sb.append("Time Remaining: ").append(getFormattedTimeRemaining());
+        sb.append(String.format("%s %s, ", "Name:", getName()));
+        sb.append(String.format("%s %s, ", "Time Remaining:", getFormattedTimeRemaining()));
+        sb.append(String.format("%s %d, ", "Energy Remaining:", getEnergyRemaining()));
+        sb.append(String.format("%s %d, ", "Energy When Full:", getEnergyFull()));
+        sb.append(String.format("%s %d, ", "Designed Energy:", getEnergyDesign()));
+        sb.append(String.format("%s %.2f, ", "Percent Remaining:", getPercentRemaining()*100d));
+        sb.append(String.format("%s %.2f, ", "Health:", getHealth()));
+        sb.append(String.format("%s %d, ", "Power:", getPower()));
+        sb.append(String.format("%s %d, ", "Voltage:", getVoltage()));
+        sb.append(String.format("%s %d, ", "Cycle Count:", getCycleCount()));
+        sb.append(String.format("%s %s, ", "State:", getState()));
+        sb.append(String.format("%s %s", "Technology:", getTechnology()));
         return sb.toString();
     }
 

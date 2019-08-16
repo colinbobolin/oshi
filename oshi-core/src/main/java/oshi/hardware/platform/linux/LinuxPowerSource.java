@@ -23,21 +23,21 @@
  */
 package oshi.hardware.platform.linux;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import oshi.hardware.PowerSource;
 import oshi.hardware.common.AbstractPowerSource;
-import oshi.util.FileUtil;
-import oshi.util.ParseUtil;
 
 /**
  * A Power Source
@@ -48,137 +48,100 @@ public class LinuxPowerSource extends AbstractPowerSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(LinuxPowerSource.class);
 
-    private static final String PS_PATH = "/sys/class/power_supply/";
+    //private static final String PS_PATH = "/sys/class/power_supply/";
 
     /**
      * Gets Battery Information
      *
      * @return An array of PowerSource objects representing batteries, etc.
      */
-    public static PowerSource[] getPowerSources() throws IOException {
+    public static PowerSource[] getPowerSources() {
         ArrayList<LinuxPowerSource> powerSourcesArrayList = new ArrayList<>();
-        powerSourcesArrayList.add(getSystemBattery());
+        powerSourcesArrayList.add(getLinuxBattery());
         return powerSourcesArrayList.toArray(new LinuxPowerSource[0]);
     }
 
-    private static LinuxPowerSource getSystemBattery() {
-        try {
-            FileReader f = new FileReader(PS_PATH + "BAT0/uevent");
-            HashMap<String, String> psInfoHashMap = new HashMap<>();
-            try (BufferedReader br = new BufferedReader(f)) {
-                for (String line; (line = br.readLine()) != null; ) {
-                    String[] psSplit = line.split("=");
-                    psInfoHashMap.put(psSplit[0], psSplit[1]);
-                }
+    private static LinuxPowerSource getLinuxBattery() {
+        HashMap<String, String> attributeMap = getLinuxBatteryAttributes();
+        return getLinuxPowerSourceFromAttributeMap(attributeMap);
+    }
+
+    private static HashMap<String, String> getLinuxBatteryAttributes() {
+        HashMap<String, String> batteryAttributes = new HashMap<>();
+        Path psPath = Paths.get("/sys/class/power_supply/BAT0/");
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(psPath)) {
+            for (Path filePath: stream) {
+                putFileContentsInMapIfNotDirectory(filePath, batteryAttributes);
             }
-            return parseLinuxBatteryInfoMapIntoPowerSourceObject(psInfoHashMap);
+            return batteryAttributes;
         }
         catch (IOException e) {
             LOG.error("IOException occurred", e); //TODO write better error logs
-            return new LinuxPowerSource();
+            return batteryAttributes;
         }
     }
 
-    //TODO change this logic so it writes from the individual files rather than the uevent file
-    private static LinuxPowerSource parseLinuxBatteryInfoMapIntoPowerSourceObject(HashMap<String, String> map) {
-        LinuxPowerSource powerSource = new LinuxPowerSource();
-        powerSource.setName(map.get("POWER_SUPPLY_NAME"));
-        powerSource.setRemainingCapacity(map.get("POWER_SUPPLY_CAPACITY"));
-        powerSource.setMaximumCapacity(map.get("POWER_SUPPLY_ENERGY_FULL"));
-        powerSource.setEnergyRemaining(map.get("POWER_SUPPLY_ENERGY_NOW"));
-        powerSource.setEnergyDesign(map.get("POWER_SUPPLY_ENERGY_FULL_DESIGN"));
-        powerSource.setCycleCount(map.get("POWER_SUPPLY_CYCLE_COUNT"));
-        powerSource.setState(map.get("POWER_SUPPLY_STATUS"));
-        powerSource.setTechnology(map.get("POWER_SUPPLY_TECHNOLOGY"));
-        powerSource.setVoltage(map.get("POWER_SUPPLY_VOLTAGE_NOW"));
-        powerSource.setTimeRemaining(powerSource.getState() == "Charging" ? -2d :
-                3600d * powerSource.getEnergyRemaining() / powerSource.getVoltage());
+    private static void putFileContentsInMapIfNotDirectory(Path path, HashMap<String, String> map) {
+        if (!Files.isDirectory(path)) {
+            String name = path.getFileName().toString();
+            String contents = getFileContentsFromPath(path);
+            map.put(name, contents);
+        }
+    }
 
+    private static String getFileContentsFromPath(Path path) {
+        try {
+            return Files.readAllLines(path).get(0);
+        }
+        catch (IOException e) {
+            return "";
+        }
+    }
+
+//    protected String name; STRING
+//    protected double remainingCapacity; DEPRECATED, POINTS TO PERCENT REMAINING
+//    protected double timeRemaining; DOUBLE, DERIVED
+//    protected long energyRemaining; LONG
+//    protected long energyFull; LONG
+//    protected long energyDesign; LONG
+//    protected double percentRemaining; DOUBLE DERIVED
+//    protected double health; DOUBLE DERIVED
+//    protected long power; LONG
+//    protected long voltage; LONG
+//    protected int cycleCount; INT
+//    protected String state; STRING
+//    protected String technology; STRING
+
+    private static LinuxPowerSource getLinuxPowerSourceFromAttributeMap(HashMap<String, String> map) {
+        LinuxPowerSource powerSource = new LinuxPowerSource();
+        powerSource.setName(map.get("name"));
+        powerSource.setEnergyRemaining(Long.parseLong(map.get("energy_now")));
+        powerSource.setEnergyFull(Long.parseLong(map.get("energy_full")));
+        powerSource.setEnergyDesign(Long.parseLong(map.get("energy_full_design")));
+        powerSource.setPower(Long.parseLong(map.get("power_now")));
+        powerSource.setVoltage(Long.parseLong(map.get("voltage_now")));
+        powerSource.setCycleCount(Integer.parseInt(map.get("cycle_count")));
+        powerSource.setState(map.get("status"));
+        powerSource.setTechnology(map.get("technology"));
         return powerSource;
     }
 
-//        String[] psNames = f.list();
-//        // Empty directory will give null rather than empty array, so fix
-//        if (psNames == null) {
-//            psNames = new String[0];
-//        }
-//        ArrayList<LinuxPowerSource> psList = new ArrayList<>(psNames.length);
-//        // For each power source, output various info
-//        for (String psName : psNames) {
-//            // Skip if name is ADP* or AC* (AC power supply)
-//            if (psName.startsWith("ADP") || psName.startsWith("AC")) {
-//                continue;
-//            }
-//            // Skip if can't read uevent file
-//            List<String> psInfo;
-//            psInfo = FileUtil.readFile(PS_PATH + psName + "/uevent", false);
-//            if (psInfo.isEmpty()) {
-//                continue;
-//            }
-//            // Initialize defaults
-//            boolean isPresent = false;
-//            boolean isCharging = false;
-//            String name = "Unknown";
-//            int energyNow = 0;
-//            int energyFull = 1;
-//            int powerNow = 1;
-//            for (String checkLine : psInfo) {
-//                if (checkLine.startsWith("POWER_SUPPLY_PRESENT")) {
-//                    // Skip if not present
-//                    String[] psSplit = checkLine.split("=");
-//                    if (psSplit.length > 1) {
-//                        isPresent = ParseUtil.parseIntOrDefault(psSplit[1], 0) > 0;
-//                    }
-//                    if (!isPresent) {
-//                        break;
-//                    }
-//                } else if (checkLine.startsWith("POWER_SUPPLY_NAME")) {
-//                    // Name
-//                    String[] psSplit = checkLine.split("=");
-//                    if (psSplit.length > 1) {
-//                        name = psSplit[1];
-//                    }
-//                } else if (checkLine.startsWith("POWER_SUPPLY_ENERGY_NOW")
-//                        || checkLine.startsWith("POWER_SUPPLY_CHARGE_NOW")) {
-//                    // Remaining Capacity = energyNow / energyFull
-//                    String[] psSplit = checkLine.split("=");
-//                    if (psSplit.length > 1) {
-//                        energyNow = ParseUtil.parseIntOrDefault(psSplit[1], 0);
-//                    }
-//                } else if (checkLine.startsWith("POWER_SUPPLY_ENERGY_FULL")
-//                        || checkLine.startsWith("POWER_SUPPLY_CHARGE_FULL")) {
-//                    String[] psSplit = checkLine.split("=");
-//                    if (psSplit.length > 1) {
-//                        energyFull = ParseUtil.parseIntOrDefault(psSplit[1], 1);
-//                        if (energyFull < 1) {
-//                            energyFull = 1;
-//                        }
-//                    }
-//                } else if (checkLine.startsWith("POWER_SUPPLY_STATUS")) {
-//                    // Check if charging
-//                    String[] psSplit = checkLine.split("=");
-//                    if (psSplit.length > 1 && "Charging".equals(psSplit[1])) {
-//                        isCharging = true;
-//                    }
-//                } else if (checkLine.startsWith("POWER_SUPPLY_POWER_NOW")
-//                        || checkLine.startsWith("POWER_SUPPLY_CURRENT_NOW")) {
-//                    // Time Remaining = energyNow / powerNow (hours)
-//                    String[] psSplit = checkLine.split("=");
-//                    if (psSplit.length > 1) {
-//                        powerNow = ParseUtil.parseIntOrDefault(psSplit[1], 1);
-//                    }
-//                    if (powerNow < 1) {
-//                        isCharging = true;
-//                    }
-//                }
-//            }
-//            if (isPresent) {
-//                psList.add(new LinuxPowerSource(name, (double) energyNow / energyFull,
-//                        isCharging ? -2d : 3600d * energyNow / powerNow));
-//            }
-//        }
-//        return psList;
-//    }
+    @Override
+    public double getTimeRemaining() {
+        return getState().equals("Charging") ? -2d : 3600d * getEnergyRemaining() / getVoltage();
+    }
+
+    @Override
+    public double getHealth() {
+        //TODO cases where values are default
+        return getEnergyFull() / getEnergyDesign();
+    }
+
+    @Override
+    public double getPercentRemaining() {
+        //TODO cases where values are default
+        return getEnergyRemaining() / getEnergyFull();
+    }
 
     /** {@inheritDoc} */
     @Override
