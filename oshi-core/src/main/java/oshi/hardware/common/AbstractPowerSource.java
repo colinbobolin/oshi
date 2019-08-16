@@ -75,7 +75,11 @@ public abstract class AbstractPowerSource implements PowerSource {
     /** {@inheritDoc} */
     @Override
     public double getTimeRemaining() {
-        return getState().equals("Charging") ? -2d : 3600d * getEnergyRemaining() / getVoltage();
+        double value;
+        if (getState().equals("Charging")) value = -2d;
+        else if (getVoltage() == 0) value = 0d;
+        else value = 3600d * getEnergyRemaining() / getVoltage();
+        return value;
     }
 
     /** {@inheritDoc} */
@@ -108,15 +112,13 @@ public abstract class AbstractPowerSource implements PowerSource {
     /** {@inheritDoc} */
     @Override
     public double getPercentRemaining() {
-        //TODO cases where values are default
-        return (double) getEnergyRemaining() / getEnergyFull();
+        return getEnergyFull() == 0 ? 0d : (double) getEnergyRemaining() / getEnergyFull();
     }
 
     /** {@inheritDoc} */
     @Override
     public double getHealth() {
-        //TODO cases where values are default
-        return (double) getEnergyFull() / getEnergyDesign();
+        return getEnergyDesign() == 0 ? 0d : (double) getEnergyFull() / getEnergyDesign();
     }
 
     /** {@inheritDoc} */
