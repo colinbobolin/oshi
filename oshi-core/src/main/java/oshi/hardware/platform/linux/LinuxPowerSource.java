@@ -24,13 +24,11 @@
 package oshi.hardware.platform.linux;
 
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,54 +57,31 @@ public class LinuxPowerSource extends AbstractPowerSource {
     }
 
     private static LinuxPowerSource getLinuxBattery() {
-        HashMap<String, String> attributeMap = getLinuxBatteryAttributes();
-        return getLinuxPowerSourceFromAttributeMap(attributeMap);
-    }
-
-    private static HashMap<String, String> getLinuxBatteryAttributes() {
-        HashMap<String, String> batteryAttributes = new HashMap<>();
-        Path psPath = Paths.get("/sys/class/power_supply/BAT0/");
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(psPath)) {
-            for (Path filePath: stream) {
-                putFileContentsInMapIfNotDirectory(filePath, batteryAttributes);
-            }
-            return batteryAttributes;
-        }
-        catch (IOException e) {
-            LOG.error("Battery not found", e);
-            return batteryAttributes;
-        }
-    }
-
-    private static void putFileContentsInMapIfNotDirectory(Path path, HashMap<String, String> map) {
-        if (!Files.isDirectory(path)) {
-            String name = path.getFileName().toString();
-            String contents = getFileContentsFromPath(path);
-            map.put(name, contents);
-        }
-    }
-
-    private static String getFileContentsFromPath(Path path) {
-        try {
-            return Files.readAllLines(path).get(0);
-        }
-        catch (IOException e) {
-            return "";
-        }
-    }
-
-    private static LinuxPowerSource getLinuxPowerSourceFromAttributeMap(HashMap<String, String> map) {
+        String psPathString = "/sys/class/power_supply/BAT0/";
         LinuxPowerSource powerSource = new LinuxPowerSource();
-        powerSource.setName(map.get("model_name"));
-        powerSource.setEnergyRemaining(Long.parseLong(map.get("energy_now")));
-        powerSource.setEnergyFull(Long.parseLong(map.get("energy_full")));
-        powerSource.setEnergyDesign(Long.parseLong(map.get("energy_full_design")));
-        powerSource.setPower(Long.parseLong(map.get("power_now")));
-        powerSource.setVoltage(Long.parseLong(map.get("voltage_now")));
-        powerSource.setCycleCount(Integer.parseInt(map.get("cycle_count")));
-        powerSource.setState(map.get("status"));
-        powerSource.setTechnology(map.get("technology"));
+        powerSource.setName(getContentsFromPathString(psPathString + "model_name"));
+        powerSource.setEnergyRemaining(Long.parseLong(getContentsFromPathString(psPathString + "energy_now")));
+        powerSource.setEnergyFull(Long.parseLong(getContentsFromPathString(psPathString + "energy_full")));
+        powerSource.setEnergyDesign(Long.parseLong(getContentsFromPathString(psPathString + "energy_full_design")));
+        powerSource.setPower(Long.parseLong(getContentsFromPathString(psPathString + "power_now")));
+        powerSource.setVoltage(Long.parseLong(getContentsFromPathString(psPathString + "voltage_now")));
+        powerSource.setCycleCount(Integer.parseInt(getContentsFromPathString(psPathString + "cycle_count")));
+        powerSource.setState(getContentsFromPathString(psPathString + "status"));
+        powerSource.setTechnology(getContentsFromPathString(psPathString + "technology"));
         return powerSource;
+    }
+
+    private static String getContentsFromPathString(String pathString) {
+        Path path = Paths.get(pathString);
+        String contents;
+        try {
+            contents = Files.readAllLines(path).get(0);
+        }
+        catch (IOException e) {
+            LOG.error("IOException", e);
+            contents = "";
+        }
+        return contents;
     }
 
     /** {@inheritDoc} */
@@ -115,7 +90,7 @@ public class LinuxPowerSource extends AbstractPowerSource {
         PowerSource[] psArr = getPowerSources();
         for (PowerSource ps : psArr) {
             if (ps.equals(this)) {
-                getLinuxBatteryAttributes();
+                getLinuxBattery();
             }
         }
         // Didn't find this battery
