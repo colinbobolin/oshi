@@ -24,7 +24,6 @@
 package oshi.hardware.platform.linux;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,8 +46,6 @@ public class LinuxPowerSource extends AbstractPowerSource {
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOG = LoggerFactory.getLogger(LinuxPowerSource.class);
-
-    //private static final String PS_PATH = "/sys/class/power_supply/";
 
     /**
      * Gets Battery Information
@@ -76,7 +73,7 @@ public class LinuxPowerSource extends AbstractPowerSource {
             return batteryAttributes;
         }
         catch (IOException e) {
-            LOG.error("IOException occurred", e); //TODO write better error logs
+            LOG.error("Battery not found", e);
             return batteryAttributes;
         }
     }
@@ -97,20 +94,6 @@ public class LinuxPowerSource extends AbstractPowerSource {
             return "";
         }
     }
-
-//    protected String name; STRING
-//    protected double remainingCapacity; DEPRECATED, POINTS TO PERCENT REMAINING
-//    protected double timeRemaining; DOUBLE, DERIVED
-//    protected long energyRemaining; LONG
-//    protected long energyFull; LONG
-//    protected long energyDesign; LONG
-//    protected double percentRemaining; DOUBLE DERIVED
-//    protected double health; DOUBLE DERIVED
-//    protected long power; LONG
-//    protected long voltage; LONG
-//    protected int cycleCount; INT
-//    protected String state; STRING
-//    protected String technology; STRING
 
     private static LinuxPowerSource getLinuxPowerSourceFromAttributeMap(HashMap<String, String> map) {
         LinuxPowerSource powerSource = new LinuxPowerSource();
