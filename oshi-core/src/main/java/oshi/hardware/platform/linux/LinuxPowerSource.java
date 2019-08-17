@@ -43,6 +43,8 @@ public class LinuxPowerSource extends AbstractPowerSource {
 
     private static final long serialVersionUID = 1L;
 
+    private static String psPathString = "/sys/class/power_supply/BAT0/";
+
     private static final Logger LOG = LoggerFactory.getLogger(LinuxPowerSource.class);
 
     /**
@@ -57,22 +59,67 @@ public class LinuxPowerSource extends AbstractPowerSource {
     }
 
     private static LinuxPowerSource getLinuxBattery() {
-        String psPathString = "/sys/class/power_supply/BAT0/";
         LinuxPowerSource powerSource = new LinuxPowerSource();
-        powerSource.setName(getContentsFromPathString(psPathString + "model_name"));
-        powerSource.setEnergyRemaining(Long.parseLong(getContentsFromPathString(psPathString + "energy_now")));
-        powerSource.setEnergyFull(Long.parseLong(getContentsFromPathString(psPathString + "energy_full")));
-        powerSource.setEnergyDesign(Long.parseLong(getContentsFromPathString(psPathString + "energy_full_design")));
-        powerSource.setPower(Long.parseLong(getContentsFromPathString(psPathString + "power_now")));
-        powerSource.setVoltage(Long.parseLong(getContentsFromPathString(psPathString + "voltage_now")));
-        powerSource.setCycleCount(Integer.parseInt(getContentsFromPathString(psPathString + "cycle_count")));
-        powerSource.setState(getContentsFromPathString(psPathString + "status"));
-        powerSource.setTechnology(getContentsFromPathString(psPathString + "technology"));
+        if (Files.isDirectory(Paths.get(psPathString))) {
+            powerSource.setName(parseBatteryName());
+            powerSource.setEnergyRemaining(parseBatteryEnergyRemaining());
+            powerSource.setEnergyFull(parseBatteryEnergyFull());
+            powerSource.setEnergyDesign(parseBatteryEnergyDesign());
+            powerSource.setPower(parseBatteryPower());
+            powerSource.setVoltage(parseBatteryVoltage());
+            powerSource.setCycleCount(parseBatteryCycleCount());
+            powerSource.setState(parseBatteryState());
+            powerSource.setTechnology(parseBatteryTechnology());
+        }
         return powerSource;
     }
 
-    private static String getContentsFromPathString(String pathString) {
-        Path path = Paths.get(pathString);
+    private static String parseBatteryName() {
+        Path path = Paths.get(psPathString, "model_name");
+        return getContentsFromPath(path);
+    }
+
+    private static long parseBatteryEnergyRemaining() {
+        Path path = Paths.get(psPathString,"energy_now");
+        return Long.parseLong(getContentsFromPath(path));
+    }
+
+    private static long parseBatteryEnergyFull() {
+        Path path = Paths.get(psPathString,"energy_full");
+        return Long.parseLong(getContentsFromPath(path));
+    }
+
+    private static long parseBatteryEnergyDesign() {
+        Path path = Paths.get(psPathString, "energy_full_design");
+        return Long.parseLong(getContentsFromPath(path));
+    }
+
+    private static long parseBatteryPower() {
+        Path path = Paths.get(psPathString, "power_now");
+        return Long.parseLong(getContentsFromPath(path));
+    }
+
+    private static long parseBatteryVoltage() {
+        Path path = Paths.get(psPathString, "voltage_now");
+        return Long.parseLong(getContentsFromPath(path));
+    }
+
+    private static int parseBatteryCycleCount() {
+        Path path = Paths.get(psPathString, "cycle_count");
+        return Integer.parseInt(getContentsFromPath(path));
+    }
+
+    private static String parseBatteryState() {
+        Path path = Paths.get(psPathString, "status");
+        return getContentsFromPath(path);
+    }
+
+    private static String parseBatteryTechnology() {
+        Path path = Paths.get(psPathString, "technology");
+        return getContentsFromPath(path);
+    }
+
+    private static String getContentsFromPath(Path path) {
         String contents;
         try {
             contents = Files.readAllLines(path).get(0);
