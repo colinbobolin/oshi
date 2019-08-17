@@ -33,19 +33,19 @@ public abstract class AbstractPowerSource implements PowerSource {
 
     private static final long serialVersionUID = 1L;
 
-    protected String name;
-    protected double remainingCapacity;
-    protected double timeRemaining;
-    protected long energyRemaining;
-    protected long energyFull;
-    protected long energyDesign;
-    protected double percentRemaining;
-    protected double health;
-    protected long power;
-    protected long voltage;
-    protected int cycleCount;
-    protected String state;
-    protected String technology;
+    protected String name = Constants.UNKNOWN;
+    protected double remainingCapacity = -1;
+    protected double timeRemaining = -1;
+    protected long energyRemaining = -1;
+    protected long energyFull = -1;
+    protected long energyDesign = -1;
+    protected double percentRemaining = -1;
+    protected double health = -1;
+    protected long power = -1;
+    protected long voltage = -1;
+    protected int cycleCount = -1;
+    protected String state = Constants.UNKNOWN;
+    protected String technology = Constants.UNKNOWN;
 
     //TODO remove this after implementation of no-arg constructors
     public AbstractPowerSource(String newName, double percentRemaining, double newTimeRemaining) {
@@ -60,16 +60,13 @@ public abstract class AbstractPowerSource implements PowerSource {
     /** {@inheritDoc} */
     @Override
     public String getName() {
-        if (this.name == null) {
-            this.name = Constants.UNKNOWN;
-        }
         return this.name;
     }
 
     /** {@inheritDoc} */
     @Override
     public double getRemainingCapacity() {
-        return getPercentRemaining();
+        return this.getPercentRemaining();
     }
 
     /** {@inheritDoc} */
@@ -86,28 +83,19 @@ public abstract class AbstractPowerSource implements PowerSource {
     /** {@inheritDoc} */
     @Override
     public long getEnergyRemaining() {
-        if (this.energyRemaining == 0) {
-            this.energyRemaining = 0;
-        }
-        return energyRemaining;
+        return this.energyRemaining;
     }
 
     /** {@inheritDoc} */
     @Override
     public long getEnergyFull() {
-        if (this.energyFull == 0) {
-            this.energyFull = 0;
-        }
-        return energyFull;
+        return this.energyFull;
     }
 
     /** {@inheritDoc} */
     @Override
     public long getEnergyDesign() {
-        if (this.energyDesign == 0) {
-            this.energyDesign = 0;
-        }
-        return energyDesign;
+        return this.energyDesign;
     }
 
     /** {@inheritDoc} */
@@ -125,46 +113,31 @@ public abstract class AbstractPowerSource implements PowerSource {
     /** {@inheritDoc} */
     @Override
     public long getPower() {
-        if (this.power == 0) {
-            this.power = 0;
-        }
-        return power;
+        return this.power;
     }
 
     /** {@inheritDoc} */
     @Override
     public long getVoltage() {
-        if (this.voltage == 0) {
-            this.voltage = 0;
-        }
-        return voltage;
+        return this.voltage;
     }
 
     /** {@inheritDoc} */
     @Override
     public int getCycleCount() {
-        if (this.cycleCount == 0) {
-            this.cycleCount = 0;
-        }
-        return cycleCount;
+        return this.cycleCount;
     }
 
     /** {@inheritDoc} */
     @Override
     public String getState() {
-        if (this.state == null) {
-            this.state = Constants.UNKNOWN;
-        }
-        return state;
+        return this.state;
     }
 
     /** {@inheritDoc} */
     @Override
     public String getTechnology() {
-        if (this.technology == null) {
-            this.technology = Constants.UNKNOWN;
-        }
-        return technology;
+        return this.technology;
     }
 
     public void setName(String name) {
