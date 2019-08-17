@@ -68,16 +68,16 @@ public interface PowrProf extends com.sun.jna.platform.win32.PowrProf {
     @FieldOrder({ "capabilities", "technology", "reserved", "chemistry", "designedCapacity", "fullChargedCapacity",
             "defaultAlert1","defaultAlert2", "criticalBias", "cycleCount" })
     class BatteryInformation extends Structure {
-        public long capabilities;
-        public char technology;
-        public char[] reserved = new char[3];
-        public char[] chemistry = new char[4];
-        public long designedCapacity;
-        public long fullChargedCapacity;
-        public long defaultAlert1;
-        public long defaultAlert2;
-        public long criticalBias;
-        public long cycleCount;
+        public int capabilities;
+        public byte technology;
+        public byte[] reserved = new byte[3];
+        public byte[] chemistry = new byte[4];
+        public int designedCapacity;
+        public int fullChargedCapacity;
+        public int defaultAlert1;
+        public int defaultAlert2;
+        public int criticalBias;
+        public int cycleCount;
 
         public BatteryInformation(Pointer p) {
             super(p);
